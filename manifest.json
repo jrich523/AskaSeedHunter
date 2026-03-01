@@ -1,7 +1,7 @@
 {
     "name": "SeedHunter",
-    "version_number": "1.0.0",
-    "website_url": "https://github.com/jrich523/SeedHunter",
+    "version_number": "1.0.2",
+    "website_url": "https://github.com/jrich523/AskaSeedHunter",
     "description": "Rapidly evaluate ASKA world seeds with map reveal, fast travel, and noclip exploration tools. Perfect for finding the ideal seed!",
     "dependencies": [
         "BepInEx-BepInExPack_IL2CPP-6.0.738"

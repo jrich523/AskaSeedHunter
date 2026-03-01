@@ -2,11 +2,13 @@ name: Build and Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'  # Triggers on version tags like v1.0.0
+    paths:
+      - 'VERSION'  # Trigger only when VERSION file changes
+    branches:
+      - main
 
 permissions:
-  contents: write  # Required for creating releases
+  contents: write  # Required for creating releases and tags
 
 jobs:
   build:
@@ -15,31 +17,55 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for tag checking
+
+    - name: Read version from VERSION file
+      id: get_version
+      shell: bash
+      run: |
+        VERSION=$(cat VERSION | tr -d '[:space:]')
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+
+    - name: Check if tag already exists
+      id: check_tag
+      shell: bash
+      run: |
+        VERSION="${{ steps.get_version.outputs.VERSION }}"
+        if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "Tag v$VERSION already exists, skipping build"
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+          echo "Tag v$VERSION does not exist, proceeding with build"
+        fi
 
     - name: Setup .NET
+      if: steps.check_tag.outputs.exists == 'false'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '6.0.x'
 
     - name: Restore dependencies
+      if: steps.check_tag.outputs.exists == 'false'
       run: dotnet restore SeedHunter.csproj
 
     - name: Build Release
+      if: steps.check_tag.outputs.exists == 'false'
       run: dotnet build SeedHunter.csproj -c Release --no-restore
 
-    - name: Get version from tag
-      id: get_version
-      shell: bash
-      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-    - name: Update manifest version
+    - name: Update manifest.json
+      if: steps.check_tag.outputs.exists == 'false'
       shell: pwsh
       run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
         $manifest = Get-Content manifest.json | ConvertFrom-Json
-        $manifest.version_number = "${{ steps.get_version.outputs.VERSION }}"
+        $manifest.version_number = $version
         $manifest | ConvertTo-Json -Depth 10 | Set-Content manifest.json
 
     - name: Create Thunderstore package
+      if: steps.check_tag.outputs.exists == 'false'
       shell: pwsh
       run: |
         $version = "${{ steps.get_version.outputs.VERSION }}"
@@ -66,11 +92,57 @@ jobs:
 
         Compress-Archive -Path "$packageDir/*" -DestinationPath "build/$packageName.zip" -Force
 
+    - name: Create Nexus Mods package
+      if: steps.check_tag.outputs.exists == 'false'
+      shell: pwsh
+      run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $packageName = "SeedHunter-$version"
+        $packageDir = "build/nexus/$packageName"
+
+        New-Item -ItemType Directory -Force -Path $packageDir
+
+        Copy-Item "bin/Release/net6.0/SeedHunter.dll" "$packageDir/SeedHunter.dll"
+
+        # Convert README.md to README.txt
+        Get-Content "README.md" | Set-Content "$packageDir/README.txt"
+
+        # Create installation instructions
+        @"
+        SeedHunter v$version - ASKA World Seed Explorer
+        ========================================
+
+        INSTALLATION:
+        1. Install BepInEx 6 IL2CPP for ASKA
+        2. Place SeedHunter.dll in ASKA\BepInEx\plugins\ folder
+        3. Launch the game
+
+        For detailed instructions, see README.txt
+
+        Download BepInEx: https://thunderstore.io/c/aska/p/BepInEx/BepInExPack_IL2CPP/
+        "@ | Set-Content "$packageDir/INSTALLATION.txt"
+
+        Compress-Archive -Path "$packageDir/*" -DestinationPath "build/SeedHunter-Nexus-$version.zip" -Force
+
+    - name: Create and push tag
+      if: steps.check_tag.outputs.exists == 'false'
+      shell: bash
+      run: |
+        VERSION="${{ steps.get_version.outputs.VERSION }}"
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git tag -a "v$VERSION" -m "Release v$VERSION"
+        git push origin "v$VERSION"
+
     - name: Create GitHub Release
+      if: steps.check_tag.outputs.exists == 'false'
       uses: softprops/action-gh-release@v1
       with:
+        tag_name: v${{ steps.get_version.outputs.VERSION }}
+        name: SeedHunter v${{ steps.get_version.outputs.VERSION }}
         files: |
           build/SeedHunter-${{ steps.get_version.outputs.VERSION }}.zip
+          build/SeedHunter-Nexus-${{ steps.get_version.outputs.VERSION }}.zip
           bin/Release/net6.0/SeedHunter.dll
         body: |
           ## SeedHunter v${{ steps.get_version.outputs.VERSION }}
