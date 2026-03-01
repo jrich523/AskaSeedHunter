@@ -1,0 +1,33 @@
+# Build outputs
+bin/
+obj/
+*.dll
+*.pdb
+
+# Development artifacts (kept locally, not committed)
+dev/
+
+# IDE and editor files
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Keep lib folder for dependencies
+!lib/
+!lib/*.dll
+
+# BepInEx runtime (belongs in game directory)
+BepInEx/
+dev/runtime-bepinex/
+
+# Development tools (not part of source code)
+dnspy/
+
+# Claude AI data (keep locally, not committed)
+.claude/

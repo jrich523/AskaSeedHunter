@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(dnspy/dnSpy.Console.exe:*)",
+      "WebFetch(domain:thunderstore.io)",
+      "Bash(export PATH=\"$PATH:/c/Users/jrich/.dotnet/tools\")",
+      "Bash(ilspycmd:*)",
+      "Bash(\"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" build SeedHunter.csproj)",
+      "Bash(dotnet build:*)",
+      "Bash(\"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" build -c Release)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -Command \"\n[System.Reflection.Assembly]::LoadFrom\\(''lib/Il2CppInterop.Runtime.dll''\\) | Out-Null;\n[System.Reflection.Assembly]::LoadFrom\\(''lib/Il2CppInterop.Common.dll''\\) | Out-Null;\n[System.Reflection.Assembly]::LoadFrom\\(''lib/Il2Cppmscorlib.dll''\\) | Out-Null;\n[System.Reflection.Assembly]::LoadFrom\\(''lib/UnityEngine.CoreModule.dll''\\) | Out-Null;\n$asm = [System.Reflection.Assembly]::LoadFrom\\(''lib/Assembly-CSharp.dll''\\);\n$types = $asm.GetTypes\\(\\) | Where-Object { $_.IsClass -and !\\($_.Name.Contains\\(''<''\\)\\) };\n$types | Where-Object { $_.Name -like ''*Map*'' -or $_.Name -like ''*Visibility*'' -or $_.Name -like ''*Exploration*'' -or $_.Name -like ''*Radius*'' -or $_.Name -like ''*Reveal*'' } | ForEach-Object { Write-Host $_.FullName }\n\")",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -Command '[System.Reflection.Assembly]::LoadFrom\\(\"\"lib/Il2CppInterop.Runtime.dll\"\"\\) | Out-Null; [System.Reflection.Assembly]::LoadFrom\\(\"\"lib/Il2CppInterop.Common.dll\"\"\\) | Out-Null; [System.Reflection.Assembly]::LoadFrom\\(\"\"lib/Il2Cppmscorlib.dll\"\"\\) | Out-Null; [System.Reflection.Assembly]::LoadFrom\\(\"\"lib/UnityEngine.CoreModule.dll\"\"\\) | Out-Null; $asm = [System.Reflection.Assembly]::LoadFrom\\(\"\"lib/Assembly-CSharp.dll\"\"\\); $types = $asm.GetTypes\\(\\) | Where-Object { $_.IsClass }; $types | Where-Object { $_.Name -like \"\"*Map*\"\" -or $_.Name -like \"\"*Visibility*\"\" -or $_.Name -like \"\"*Exploration*\"\" -or $_.Name -like \"\"*Radius*\"\" -or $_.Name -like \"\"*Reveal*\"\" -or $_.Name -like \"\"*POI*\"\" -or $_.Name -like \"\"*Location*\"\" -or $_.Name -like \"\"*World*\"\" } | Select-Object -First 50 | ForEach-Object { Write-Host $_.FullName }')",
+      "WebFetch(domain:gitlab.com)",
+      "Bash(Select-String -Pattern \"Minimap|PlayerExplor|MapUI|MapReveal\" -CaseSensitive:$false)",
+      "Bash(dir:*)"
+    ]
+  }
+}

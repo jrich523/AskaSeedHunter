@@ -1,0 +1,97 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore SeedHunter.csproj
+
+    - name: Build Release
+      run: dotnet build SeedHunter.csproj -c Release --no-restore
+
+    - name: Get version from tag
+      id: get_version
+      shell: bash
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Update manifest version
+      shell: pwsh
+      run: |
+        $manifest = Get-Content manifest.json | ConvertFrom-Json
+        $manifest.version_number = "${{ steps.get_version.outputs.VERSION }}"
+        $manifest | ConvertTo-Json -Depth 10 | Set-Content manifest.json
+
+    - name: Create Thunderstore package
+      shell: pwsh
+      run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $packageName = "SeedHunter-$version"
+        $packageDir = "build/thunderstore/$packageName"
+
+        New-Item -ItemType Directory -Force -Path $packageDir
+
+        Copy-Item "bin/Release/net6.0/SeedHunter.dll" "$packageDir/SeedHunter.dll"
+        Copy-Item "manifest.json" "$packageDir/manifest.json"
+        Copy-Item "README.md" "$packageDir/README.md"
+        Copy-Item "icon.png" "$packageDir/icon.png"
+
+        if (Test-Path "CHANGELOG.md") {
+          Copy-Item "CHANGELOG.md" "$packageDir/CHANGELOG.md"
+        } else {
+          @"
+        # Changelog
+
+        ## $version
+        - Release $version
+        "@ | Set-Content "$packageDir/CHANGELOG.md"
+        }
+
+        Compress-Archive -Path "$packageDir/*" -DestinationPath "build/$packageName.zip" -Force
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          build/SeedHunter-${{ steps.get_version.outputs.VERSION }}.zip
+          bin/Release/net6.0/SeedHunter.dll
+        body: |
+          ## SeedHunter v${{ steps.get_version.outputs.VERSION }}
+
+          ### Installation
+
+          **Thunderstore (Recommended)**
+          1. Install with a mod manager (r2modman or Thunderstore Mod Manager)
+          2. Search for "SeedHunter" and click Install
+
+          **Manual Installation**
+          1. Download `SeedHunter.dll` from this release
+          2. Place in `ASKA/BepInEx/plugins/` folder
+
+          ### Features
+          - F8: Reveal all caves, locations, and objectives
+          - F9: Fast movement + infinite stamina + god mode
+          - F10: Noclip/fly mode (Space=up, Ctrl=down)
+          - F7: Disable all cheats
+          - +/-: Adjust movement speed (5-100)
+
+          ### Requirements
+          - BepInEx 6.0.738 or later
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
