@@ -29,6 +29,8 @@ All settings are automatically saved between sessions!
 
 ## Usage
 
+This isnt the perfect approach but it works. you'll want to enable all features and likely bump speed to 100 and then run forward and jump. while you are holding space you cant move forward, so get high (sometimes you can go too high) and then fall forward until you get low (dont hit the ground, i couldnt stop fall damage) and hold space again. Easy enough once you get the hang of it and can quick open a map.
+
 ### Map Reveal (F8)
 
 Continuously reveals caves, objectives, and locations as they load. Toggle on before exploring to ensure everything is revealed as you move around the world.
